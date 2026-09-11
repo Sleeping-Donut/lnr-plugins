@@ -17,6 +17,7 @@ const require = createRequire(import.meta.url);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const REPO_ROOT = path.join(__dirname, '..');
+const LIVE_CHECK_IGNORE = path.join(REPO_ROOT, '.livecheckignore');
 
 const MIN_CHAPTER_LENGTH = 200;
 const STEP_TIMEOUT_MS = 30_000;
@@ -372,13 +373,41 @@ function printReport(results) {
   return hasFail;
 }
 
+async function loadSkipList() {
+  try {
+    const raw = await fs.readFile(LIVE_CHECK_IGNORE, 'utf8');
+    return new Set(
+      raw
+        .split('\n')
+        .map(line => line.replace(/#.*$/, '').trim())
+        .filter(Boolean),
+    );
+  } catch {
+    return new Set();
+  }
+}
+
 async function main() {
-  const pluginPaths = process.argv.slice(2);
-  if (pluginPaths.length === 0) {
+  const requested = process.argv.slice(2);
+  if (requested.length === 0) {
     console.error(
       'Usage: node scripts/live-check-plugin.mjs <plugin.ts> [more.ts...]',
     );
     process.exitCode = 2;
+    return;
+  }
+
+  const skip = await loadSkipList();
+  const pluginPaths = requested.filter(
+    pluginPath => !skip.has(path.basename(pluginPath, '.ts')),
+  );
+  for (const pluginPath of requested) {
+    if (!pluginPaths.includes(pluginPath)) {
+      console.log(`Skipping ${pluginPath} (listed in .livecheckignore)`);
+    }
+  }
+  if (pluginPaths.length === 0) {
+    console.log('No plugins to check.');
     return;
   }
 

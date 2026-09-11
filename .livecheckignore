@@ -1,0 +1,6 @@
+# Plugin ids excluded from the live check.
+#
+# Self-hosted plugins need user-specific configuration (server URL, API key)
+# that the check does not have, so it always reports FAIL. List their ids
+# here, one per line; `#` starts a comment.
+kavita
