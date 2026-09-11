@@ -1,0 +1,169 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "eslint",
+    "typescript"
+  ],
+  "categories": {
+    "correctness": "error"
+  },
+  "ignorePatterns": [
+    ".js/**",
+    "docs/**",
+    "proxy_server.js",
+    "plugins/*/*\\[*\\]*.ts"
+  ],
+  "rules": {
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": [
+              "@/lib/fetch*"
+            ],
+            "message": "Use @libs/fetch instead of @/lib/fetch"
+          }
+        ]
+      }
+    ],
+    "no-unused-vars": [
+      "warn",
+      {
+        "caughtErrors": "none"
+      }
+    ],
+    "typescript/no-explicit-any": "warn",
+    "typescript/ban-ts-comment": "off",
+    "typescript/consistent-type-definitions": [
+      "error",
+      "type"
+    ],
+    "no-case-declarations": "warn",
+    "no-undef": "off"
+  },
+  "overrides": [
+    {
+      "files": [
+        "plugins/*/*.ts"
+      ],
+      "globals": {
+        "AggregateError": "readonly",
+        "Array": "readonly",
+        "ArrayBuffer": "readonly",
+        "BigInt": "readonly",
+        "BigInt64Array": "readonly",
+        "BigUint64Array": "readonly",
+        "Boolean": "readonly",
+        "DataView": "readonly",
+        "Date": "readonly",
+        "DebuggerInternal": "readonly",
+        "Error": "readonly",
+        "EvalError": "readonly",
+        "Float32Array": "readonly",
+        "Float64Array": "readonly",
+        "Function": "readonly",
+        "HermesInternal": "readonly",
+        "Infinity": "readonly",
+        "Int16Array": "readonly",
+        "Int32Array": "readonly",
+        "Int8Array": "readonly",
+        "JSON": "readonly",
+        "Map": "readonly",
+        "Math": "readonly",
+        "NaN": "readonly",
+        "Number": "readonly",
+        "Object": "readonly",
+        "Promise": "readonly",
+        "Proxy": "readonly",
+        "QuitError": "readonly",
+        "RangeError": "readonly",
+        "ReferenceError": "readonly",
+        "Reflect": "readonly",
+        "RegExp": "readonly",
+        "Set": "readonly",
+        "String": "readonly",
+        "Symbol": "readonly",
+        "SyntaxError": "readonly",
+        "TimeoutError": "readonly",
+        "TypeError": "readonly",
+        "URIError": "readonly",
+        "Uint16Array": "readonly",
+        "Uint32Array": "readonly",
+        "Uint8Array": "readonly",
+        "Uint8ClampedArray": "readonly",
+        "WeakMap": "readonly",
+        "WeakSet": "readonly",
+        "__defineGetter__": "readonly",
+        "__defineSetter__": "readonly",
+        "__lookupGetter__": "readonly",
+        "__lookupSetter__": "readonly",
+        "clearTimeout": "readonly",
+        "constructor": "readonly",
+        "createHeapSnapshot": "readonly",
+        "decodeURI": "readonly",
+        "decodeURIComponent": "readonly",
+        "encodeURI": "readonly",
+        "encodeURIComponent": "readonly",
+        "escape": "readonly",
+        "gc": "readonly",
+        "globalThis": "readonly",
+        "hasOwnProperty": "readonly",
+        "isFinite": "readonly",
+        "isNaN": "readonly",
+        "isPrototypeOf": "readonly",
+        "loadSegment": "readonly",
+        "parseFloat": "readonly",
+        "parseInt": "readonly",
+        "print": "readonly",
+        "propertyIsEnumerable": "readonly",
+        "setImmediate": "readonly",
+        "setTimeout": "readonly",
+        "toLocaleString": "readonly",
+        "toString": "readonly",
+        "undefined": "readonly",
+        "unescape": "readonly",
+        "valueOf": "readonly",
+        "AbortController": "readonly",
+        "Blob": "readonly",
+        "ErrorUtils": "readonly",
+        "Event": "readonly",
+        "EventTarget": "readonly",
+        "File": "readonly",
+        "FileReader": "readonly",
+        "FormData": "readonly",
+        "Headers": "readonly",
+        "Intl": "readonly",
+        "URL": "readonly",
+        "URLSearchParams": "readonly",
+        "WebSocket": "readonly",
+        "XMLHttpRequest": "readonly",
+        "__DEV__": "readonly",
+        "__dirname": "readonly",
+        "__fbBatchedBridgeConfig": "readonly",
+        "alert": "readonly",
+        "cancelAnimationFrame": "readonly",
+        "cancelIdleCallback": "readonly",
+        "clearImmediate": "readonly",
+        "clearInterval": "readonly",
+        "console": "readonly",
+        "document": "readonly",
+        "exports": "readonly",
+        "fetch": "readonly",
+        "global": "readonly",
+        "module": "readonly",
+        "navigator": "readonly",
+        "process": "readonly",
+        "queueMicrotask": "readonly",
+        "requestAnimationFrame": "readonly",
+        "requestIdleCallback": "readonly",
+        "require": "readonly",
+        "setInterval": "readonly",
+        "window": "readonly"
+      },
+      "rules": {
+        "no-undef": "error"
+      }
+    }
+  ]
+}
