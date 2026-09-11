@@ -10,13 +10,14 @@ type SeriesDto = {
   id: number;
   name: string;
   summary?: string;
-  metadata?: {
-    summary?: string;
-    publicationStatus?: string;
-    genres?: { title?: string; name?: string }[];
-    tags?: { title?: string; name?: string }[];
-    writers?: { name?: string }[];
-  };
+};
+
+type SeriesMetadataDto = {
+  summary?: string;
+  publicationStatus?: number;
+  genres?: { title?: string; name?: string }[];
+  tags?: { title?: string; name?: string }[];
+  writers?: { name?: string }[];
 };
 
 type VolumeDto = {
@@ -35,9 +36,17 @@ type ChapterDto = {
 };
 
 type BookInfoDto = {
-  seriesFormat?: string;
+  seriesFormat?: number;
   pages?: number;
   bookTitle?: string;
+};
+
+const FORMAT_NAMES: Record<number, string> = {
+  0: 'image',
+  1: 'archive',
+  2: 'unknown',
+  3: 'epub',
+  4: 'pdf',
 };
 
 type OpdsLink = {
@@ -52,12 +61,19 @@ type OpdsEntry = {
   links: OpdsLink[];
 };
 
+type FilterOption = {
+  label: string;
+  value: string;
+};
+
 class KavitaPlugin implements Plugin.PluginBase {
   id = 'kavita';
   name = 'Kavita';
   icon = 'src/multi/kavita/icon.png';
-  site = 'https://www.kavitareader.com';
-  version = '0.1.0';
+  site = (storage.get('url') as string) || '';
+  version = '0.1.2';
+
+  private libraryCache: { key: string; options: FilterOption[] } | null = null;
 
   private get baseUrl(): string {
     const url = (storage.get('url') as string) || '';
@@ -82,11 +98,26 @@ class KavitaPlugin implements Plugin.PluginBase {
     return `${this.baseUrl}/api/${path}${query ? `?${query}` : ''}`;
   }
 
+  private absolute(url: string): string {
+    if (/^https?:\/\//i.test(url)) return url;
+    if (url.startsWith('//')) {
+      const scheme =
+        this.baseUrl.match(/^[a-z][a-z0-9+.-]*:/i)?.[0] ?? 'https:';
+      return `${scheme}${url}`;
+    }
+    return `${this.baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+  }
+
   private async requestText(
     path: string,
     params: Record<string, string> = {},
   ): Promise<string> {
-    return await fetchText(this.url(path, params));
+    const url = this.url(path, params);
+    const body = await fetchText(url);
+    if (!body) {
+      console.error(`[Kavita] Empty response from ${url}`);
+    }
+    return body;
   }
 
   private async requestJson<T>(
@@ -142,8 +173,34 @@ class KavitaPlugin implements Plugin.PluginBase {
     return {
       name: entry.title || `Series ${id}`,
       path: `series:${id}`,
-      cover: cover || defaultCover,
+      cover: cover ? this.absolute(cover) : defaultCover,
     };
+  }
+
+  private seriesToNovel(series: SeriesDto): Plugin.NovelItem {
+    return {
+      name: series.name,
+      path: `series:${series.id}`,
+      cover: this.url('image/series-cover', { seriesId: String(series.id) }),
+    };
+  }
+
+  private async loadLibraries(force = false): Promise<void> {
+    const key = `${this.baseUrl}|${this.apiKey}`;
+    if (!force && this.libraryCache?.key === key) return;
+
+    const xml = await this.requestText(`opds/${this.apiKey}/libraries`);
+    const options: FilterOption[] = [];
+    for (const entry of this.parseFeed(xml)) {
+      const href = entry.links.find(link => link.rel === 'subsection')?.href;
+      const match = href?.match(/libraries\/(\d+)/);
+      if (!match) continue;
+      options.push({
+        label: entry.title || `Library ${match[1]}`,
+        value: match[1],
+      });
+    }
+    this.libraryCache = { key, options };
   }
 
   private parseId(path: string, kind: string): number | undefined {
@@ -151,20 +208,40 @@ class KavitaPlugin implements Plugin.PluginBase {
     return match ? Number(match[1]) : undefined;
   }
 
-  private mapStatus(status?: string): string {
-    switch ((status || '').toUpperCase()) {
-      case 'ONGOING':
+  private mapStatus(status?: number): string {
+    switch (status) {
+      case 0:
         return NovelStatus.Ongoing;
-      case 'COMPLETED':
-      case 'ENDED':
-        return NovelStatus.Completed;
-      case 'HIATUS':
+      case 1:
         return NovelStatus.OnHiatus;
-      case 'CANCELLED':
-      case 'ABANDONED':
+      case 2:
+      case 4:
+        return NovelStatus.Completed;
+      case 3:
         return NovelStatus.Cancelled;
       default:
         return NovelStatus.Unknown;
+    }
+  }
+
+  private async allSeries(pageNo: number): Promise<Plugin.NovelItem[]> {
+    const body = await fetchText(
+      this.url('Series/all-v2', {
+        pageNumber: String(Math.max(pageNo, 1)),
+        pageSize: '50',
+      }),
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ statements: [] }),
+      },
+    );
+    if (!body) return [];
+    try {
+      const series = JSON.parse(body) as SeriesDto[];
+      return series.map(item => this.seriesToNovel(item));
+    } catch {
+      return [];
     }
   }
 
@@ -177,15 +254,24 @@ class KavitaPlugin implements Plugin.PluginBase {
   ): Promise<Plugin.NovelItem[]> {
     if (!this.configured) return [];
 
+    if (pageNo <= 1) {
+      await this.loadLibraries(true);
+    }
+
     const libraryId =
       filters?.library.value || (storage.get('libraryId') as string) || '';
+
+    if (!showLatestNovels && !libraryId) {
+      return await this.allSeries(pageNo);
+    }
+
     const path =
       showLatestNovels || !libraryId
         ? `opds/${this.apiKey}/recently-added`
         : `opds/${this.apiKey}/libraries/${libraryId}`;
 
     const xml = await this.requestText(path, {
-      pageNumber: String(Math.max(pageNo - 1, 0)),
+      pageNumber: String(Math.max(pageNo, 1)),
     });
 
     return this.parseFeed(xml)
@@ -201,7 +287,7 @@ class KavitaPlugin implements Plugin.PluginBase {
 
     const xml = await this.requestText(`opds/${this.apiKey}/series`, {
       query: searchTerm,
-      pageNumber: String(Math.max(pageNo - 1, 0)),
+      pageNumber: String(Math.max(pageNo, 1)),
     });
 
     return this.parseFeed(xml)
@@ -220,25 +306,31 @@ class KavitaPlugin implements Plugin.PluginBase {
     const seriesId = this.parseId(novelPath, 'series');
     if (seriesId === undefined || !this.configured) return novel;
 
-    const series = await this.requestJson<SeriesDto>(`Series/${seriesId}`);
+    const [series, metadata] = await Promise.all([
+      this.requestJson<SeriesDto>(`Series/${seriesId}`),
+      this.requestJson<SeriesMetadataDto>('Series/metadata', {
+        seriesId: String(seriesId),
+      }),
+    ]);
+
     if (series) {
       novel.name = series.name || novel.name;
-      novel.summary = series.metadata?.summary || series.summary || '';
-      novel.author = (series.metadata?.writers || [])
-        .map(writer => writer.name)
-        .filter(Boolean)
-        .join(', ');
-      novel.genres = [
-        ...(series.metadata?.genres || []),
-        ...(series.metadata?.tags || []),
-      ]
-        .map(tag => tag.title || tag.name)
-        .filter(Boolean)
-        .join(', ');
-      novel.status = this.mapStatus(series.metadata?.publicationStatus);
       novel.cover = this.url('image/series-cover', {
         seriesId: String(seriesId),
       });
+    }
+
+    if (metadata) {
+      novel.summary = metadata.summary || '';
+      novel.author = (metadata.writers || [])
+        .map(writer => writer.name)
+        .filter(Boolean)
+        .join(', ');
+      novel.genres = [...(metadata.genres || []), ...(metadata.tags || [])]
+        .map(tag => tag.title || tag.name)
+        .filter(Boolean)
+        .join(', ');
+      novel.status = this.mapStatus(metadata.publicationStatus);
     }
 
     const volumes =
@@ -281,10 +373,10 @@ class KavitaPlugin implements Plugin.PluginBase {
     const info = await this.requestJson<BookInfoDto>(
       `Book/${chapterId}/book-info`,
     );
-    const format = (info?.seriesFormat || '').toLowerCase();
+    const format = info?.seriesFormat;
     const pages = info?.pages ?? 0;
 
-    if (format === 'epub') {
+    if (format === 3) {
       const parts: string[] = [];
       for (let page = 0; page < pages; page++) {
         const html = await this.readBookPage(chapterId, page);
@@ -293,7 +385,7 @@ class KavitaPlugin implements Plugin.PluginBase {
       return parts.join('\n') || '<p>No readable pages were returned.</p>';
     }
 
-    if (format === 'archive' || format === 'image') {
+    if (format === 0 || format === 1) {
       const images: string[] = [];
       for (let page = 0; page < pages; page++) {
         images.push(
@@ -306,7 +398,7 @@ class KavitaPlugin implements Plugin.PluginBase {
       return images.join('\n');
     }
 
-    return `<p>Kavita reports this chapter as "${format || 'unknown'}", which cannot be rendered as text.</p>`;
+    return `<p>Kavita reports this chapter as "${FORMAT_NAMES[format ?? -1] || 'unknown'}", which cannot be rendered as text.</p>`;
   }
 
   private async readBookPage(chapterId: number, page: number): Promise<string> {
@@ -330,23 +422,38 @@ class KavitaPlugin implements Plugin.PluginBase {
     const $ = parseHTML(html);
     $('[src^="/"]').each((_, el) => {
       const src = $(el).attr('src');
-      if (src) $(el).attr('src', this.baseUrl + src);
+      if (src) $(el).attr('src', this.absolute(src));
     });
     $('[href^="/"]').each((_, el) => {
       const href = $(el).attr('href');
-      if (href) $(el).attr('href', this.baseUrl + href);
+      if (href) $(el).attr('href', this.absolute(href));
     });
     const body = $('body');
     return body.length ? (body.html() ?? '') : $.html();
   }
 
-  filters = {
-    library: {
-      value: '',
-      label: 'Library ID (optional)',
-      type: FilterTypes.TextInput,
-    },
-  } satisfies Filters;
+  resolveUrl = (path: string, isNovel?: boolean) => {
+    if (isNovel) {
+      return this.url(`Series/${path.replace(/^series:/, '')}`);
+    }
+    return this.url(`Book/${path.replace(/^chapter:/, '')}/book-page`, {
+      page: '0',
+    });
+  };
+
+  get filters() {
+    return {
+      library: {
+        value: '',
+        label: 'Library',
+        type: FilterTypes.Picker,
+        options: [
+          { label: 'All libraries', value: '' },
+          ...(this.libraryCache?.options ?? []),
+        ],
+      },
+    } satisfies Filters;
+  }
 
   pluginSettings = {
     url: {
