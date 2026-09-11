@@ -24,15 +24,16 @@
           default = pkgs.mkShell {
             packages = [
               pkgs.nodejs_22
+              pkgs.pnpm
               pkgs.git
             ];
 
             shellHook = ''
               echo "LNReader plugin devshell"
               echo "  node $(node --version)"
-              echo "  npm  $(npm --version)"
+              echo "  pnpm $(pnpm --version)"
               echo
-              echo "Run: npm install && npm run dev:start"
+              echo "Run: pnpm install && pnpm dev:start"
             '';
           };
         });

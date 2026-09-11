@@ -228,8 +228,8 @@ Two small tooling adjustments were needed for a single-plugin repo:
 
 ```sh
 nix develop          # or: direnv allow
-npm install
-npm run dev:start    # playground at http://localhost:3000
+pnpm install
+pnpm run dev:start    # playground at http://localhost:3000
 ```
 
 The devshell provides Node.js 22 and git. Note: inside a git repo, `nix develop` only sees
@@ -262,17 +262,17 @@ tracked files, so `git add` the repo (or use `nix develop path:.`) before the fi
   Decide whether to invest in archive libraries or document them as limited.
 - **Auth secrecy.** `pluginSettings` has no password field; an API key is stored as plain
   Text. Acceptable for a self-hosted key, but note it.
-- **CI live check.** `npm run check:plugin` runs against default (empty) settings, so a
+- **CI live check.** `pnpm run check:plugin` runs against default (empty) settings, so a
   self-hosted plugin reports `INCONCLUSIVE`/`FAIL` in CI. Verify manually; that's expected.
 
 ## 10. Testing
 
-- Local: `npm run dev:start` → `http://localhost:3000`, configure URL + API key, exercise
+- Local: `pnpm run dev:start` → `http://localhost:3000`, configure URL + API key, exercise
   `popularNovels`, `searchNovels`, `parseNovel`, `parseChapter` by eye (pagination, filters,
   chapter ordering, covers, image loading).
-- `npm run check:plugin -- plugins/multi/kavita.ts` (expect `INCONCLUSIVE` without a
+- `pnpm run check:plugin plugins/multi/kavita.ts` (expect `INCONCLUSIVE` without a
   reachable server).
-- `npm run lint`, `npm run format:check`, `npm run build:compile`, `npm run build:manifest`.
+- `pnpm run lint`, `pnpm run format:check`, `pnpm run build:compile`, `pnpm run build:manifest`.
 - This is a personal extension repo, so there is no upstream PR; commit with Conventional
   Commits (`feat(multi): add Kavita plugin`) and push to trigger publishing. If upstreaming
   later, reference `lnreader/lnreader-plugins#432` (Self hosted source — Kavita/OPDS).

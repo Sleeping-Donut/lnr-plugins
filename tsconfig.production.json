@@ -119,6 +119,7 @@
     "./src/*.*",
     "./*.*",
     "public/**",
+    "dist/**",
     ".github/**",
     ".husky/**",
     "node_modules/**",

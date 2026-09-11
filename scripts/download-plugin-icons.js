@@ -56,7 +56,7 @@ const notAvailableImage = fs.readFileSync(
     console.log(
       '❌',
       plugin_path,
-      'not found (run "npm run build:manifest" first)',
+      'not found (run "pnpm run build:manifest" first)',
     );
     return;
   }

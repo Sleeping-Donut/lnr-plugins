@@ -6,20 +6,20 @@ in ways the compiler can't see, because the wiki/site content they scrape has no
 chapter list, a chapter body that's actually a "back to top" nav page, search results leaking
 pages in the wrong language, and so on.
 
-## `npm run check:plugin`
+## `pnpm run check:plugin`
 
 Bundles your plugin with esbuild the same way the production build does, then runs it against the
 live site — calling `popularNovels`, `searchNovels`, `parseNovel`, and `parseChapter` in sequence,
 using your plugin's own default filter values (the same values the app would send).
 
 ```sh
-npm run check:plugin -- plugins/english/yourPlugin.ts
+pnpm run check:plugin plugins/english/yourPlugin.ts
 ```
 
 You can check multiple plugins in one run:
 
 ```sh
-npm run check:plugin -- plugins/english/yourPlugin.ts plugins/english/anotherPlugin.ts
+pnpm run check:plugin plugins/english/yourPlugin.ts plugins/english/anotherPlugin.ts
 ```
 
 Each step reports one of three outcomes:

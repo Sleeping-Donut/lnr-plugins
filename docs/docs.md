@@ -33,9 +33,9 @@
    site — the reference sections below cover the shape each one returns. [Using Cheerio](#using-cheerio)
    and [Custom fetching functions](#custom-fetching-functions) cover the two building blocks most
    plugins need for that.
-5. Test locally with `npm run dev:start`, which launches a browser playground at
+5. Test locally with `pnpm run dev:start`, which launches a browser playground at
    `http://localhost:3000` where you can run your plugin's functions against the real site. Before
-   opening a PR, run `npm run check:plugin -- plugins/<lang>/yourPlugin.ts` (see
+   opening a PR, run `pnpm run check:plugin plugins/<lang>/yourPlugin.ts` (see
    [`docs/testing.md`](./testing.md)) — this is the same live-site check CI runs.
 
 For CMS-templated sites (WordPress themes, Madara, etc.) and any other repo-specific workflow
@@ -1207,7 +1207,7 @@ three being present to list and install a plugin.
 
 ### How manifest fields are produced
 
-`npm run build:manifest` (`scripts/build-plugin-manifest.js`) compiles every plugin under
+`pnpm run build:manifest` (`scripts/build-plugin-manifest.js`) compiles every plugin under
 `plugins/**`, evaluates its default export, and reads off `id`, `name`, `site`, `version`, `icon`,
 `customJS`, `customCSS`, and `filters` to build each `plugins.json` entry:
 

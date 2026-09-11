@@ -29,12 +29,12 @@ if [[ "$1" == "--all-branches" ]]; then
             git branch -D $dist
         fi
         git stash pop
-        npm run clean:multisrc
-        npm run build:multisrc
+        pnpm run clean:multisrc
+        pnpm run build:multisrc
         echo "Compiling TypeScript..."
-        npx tsc --project tsconfig.production.json
+        pnpm exec tsc --project tsconfig.production.json
         echo "# $branch" >> $GITHUB_STEP_SUMMARY
-        BRANCH=$dist npm run build:manifest -- --only-new 2>> $GITHUB_STEP_SUMMARY
+        BRANCH=$dist pnpm run build:manifest -- --only-new 2>> $GITHUB_STEP_SUMMARY
         if [ ! -d ".dist" ] || [ -z "$(ls -A .dist)" ]; then
             echo "❌ ERROR: Manifest generation failed - .dist is missing or empty"
             exit 1
@@ -80,11 +80,11 @@ fi
 
 git reset
 rm -rf .js
-npm run clean:multisrc
-npm run build:multisrc
+pnpm run clean:multisrc
+pnpm run build:multisrc
 echo "Compiling TypeScript..."
-npx tsc --project tsconfig.production.json
-npm run build:manifest
+pnpm exec tsc --project tsconfig.production.json
+pnpm run build:manifest
 
 if [ ! -d ".dist" ] || [ -z "$(ls -A .dist)" ]; then
     echo "❌ ERROR: Manifest generation failed - .dist is missing or empty"

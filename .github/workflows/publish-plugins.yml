@@ -27,13 +27,17 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: 'pnpm'
 
       - name: Install Dependencies
-        run: npm ci --omit=dev --ignore-scripts
+        run: pnpm install --frozen-lockfile --prod
 
       - name: Configure Git
         run: |
@@ -41,5 +45,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Publish Plugins
-        run: npm run publish:plugins
+        run: pnpm run publish:plugins
         shell: bash

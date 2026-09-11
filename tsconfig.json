@@ -124,6 +124,7 @@
     "scripts/**",
     "docs/**",
     "public/**",
+    "dist/**",
     ".github/**",
     ".husky/**",
     "node_modules/**",

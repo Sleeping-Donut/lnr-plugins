@@ -7,7 +7,7 @@ A comprehensive guide to testing your LNReader plugins using the web interface.
 1. **Start the development server:**
 
    ```bash
-   npm run dev:start
+   pnpm run dev:start
    ```
 
 2. **Open your browser:**
@@ -52,6 +52,6 @@ Before submitting your plugin, verify that:
 
 - **Plugin Development:** See [docs.md](./docs.md) for API reference
 - **Quick Start:** See [quickstart.md](./quickstart.md) for plugin creation
-- **Pre-PR Check:** See [testing.md](./testing.md) for the required `npm run check:plugin` live check
+- **Pre-PR Check:** See [testing.md](./testing.md) for the required `pnpm run check:plugin` live check
 - **Issues:** Create a [GitHub issue](https://github.com/LNReader/lnreader-plugins/issues/new)
 - **Community:** Join us on [Discord](https://discord.gg/QdcWN4MD63)

@@ -41,23 +41,23 @@ Replace `<your-user>/<your-repo>`, and keep the `plugins/v<version>` part in syn
 
 ## Development
 
-This repo defines a Nix devshell with Node.js 22 and git.
+This repo defines a Nix devshell with Node.js 22, pnpm, and git.
 
 ```sh
 nix develop          # or: direnv allow
-npm install
-npm run dev:start    # playground at http://localhost:3000
+pnpm install
+pnpm dev:start       # playground at http://localhost:3000
 ```
 
 Useful commands (same as upstream):
 
-- `npm run dev:start` — regenerate generated plugins and launch the plugin playground.
-- `npm run check:plugin -- plugins/multi/kavita.ts` — bundle and exercise the plugin against a
+- `pnpm dev:start` — regenerate generated plugins and launch the plugin playground.
+- `pnpm check:plugin plugins/multi/kavita.ts` — bundle and exercise the plugin against a
   live server (expect `INCONCLUSIVE` unless a reachable Kavita with valid credentials is set as
   the plugin's default settings; self-hosted plugins are normally verified manually).
-- `npm run lint` / `npm run format:check`
-- `npm run build:compile` / `npm run build:manifest`
-- `npm run publish:plugins` — compile and force-push the built manifest to the
+- `pnpm lint` / `pnpm format:check`
+- `pnpm build:compile` / `pnpm build:manifest`
+- `pnpm publish:plugins` — compile and force-push the built manifest to the
   `plugins/v<version>` branch.
 
 ## Publishing

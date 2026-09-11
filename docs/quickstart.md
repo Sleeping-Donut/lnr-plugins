@@ -10,14 +10,14 @@
 - [git](https://git-scm.com/doc/ext) basics
 - TypeScript or JavaScript basics
 - Node.js >= 22
-- Install the dependencies with `npm i`
+- Install the dependencies with `pnpm install`
 
 ### Single plugin guide
 
 1. Create your plugin script in `/plugins` [<span style="font-size: 0.8rem;">(learn more)</span>](#creating-plugin-script)
 2. Copy the code from [plugin-template.ts](./plugin-template.ts)
 3. Start coding [<span style="font-size:0.8rem">(documentation)</span>](./docs.md)
-4. Run `npm run check:plugin -- plugins/<lang>/yourPlugin.ts` before opening a PR — see [Testing your plugin](./testing.md)
+4. Run `pnpm run check:plugin plugins/<lang>/yourPlugin.ts` before opening a PR — see [Testing your plugin](./testing.md)
 
 #### Creating plugin script
 
@@ -48,7 +48,7 @@ to see if a generator already matches your target site's CMS):
 
 1. Open the generator's folder, e.g. `plugins/multisrc/lightnovelwp/`, and add an entry for your
    site to its `sources.json`.
-2. Run `npm run build:multisrc` to materialize the actual plugin file(s) into
+2. Run `pnpm run build:multisrc` to materialize the actual plugin file(s) into
    `plugins/<lang>/<name>[<generator>].ts`.
 3. Follow the generator's own `README.md` for anything specific to it — icon handling, available
    filters, and `sources.json` fields differ between generators (compare
@@ -58,4 +58,4 @@ to see if a generator already matches your target site's CMS):
 **Adding a new generator** (only if no existing generator's CMS matches your target site) is a
 larger undertaking — read an existing generator's `generator.js` and `template.ts` first to see the
 shape expected by `plugins/multisrc/generate-multisrc-plugins.js`, which drives all generators via
-`npm run build:multisrc`.
+`pnpm run build:multisrc`.

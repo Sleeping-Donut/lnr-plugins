@@ -4,20 +4,22 @@ import languages from './languages.js';
 import { execSync } from 'child_process';
 import { minify } from './terser.js';
 
-const REMOTE = execSync('git remote get-url origin')
-  .toString()
-  .replace(/[\s\n]/g, '');
 const CURRENT_BRANCH = execSync('git branch --show-current')
   .toString()
   .replace(/[\s\n]/g, '');
 const BRANCH = process.env.BRANCH ? process.env.BRANCH : CURRENT_BRANCH;
-const matched = REMOTE.match(/([^:/]+?)\/([^/.]+)(\.git)?$/);
-if (!matched) throw Error('Cant parse git url');
-const USERNAME = matched[1];
-const REPO = matched[2];
-const USER_CONTENT_LINK = process.env.USER_CONTENT_BASE
-  ? process.env.USER_CONTENT_BASE
-  : `https://raw.githubusercontent.com/${USERNAME}/${REPO}/${BRANCH}`;
+
+let USER_CONTENT_LINK = process.env.USER_CONTENT_BASE;
+if (!USER_CONTENT_LINK) {
+  const REMOTE = execSync('git remote get-url origin')
+    .toString()
+    .replace(/[\s\n]/g, '');
+  const matched = REMOTE.match(/([^:/]+?)\/([^/.]+)(\.git)?$/);
+  if (!matched) throw Error('Cant parse git url');
+  const USERNAME = matched[1];
+  const REPO = matched[2];
+  USER_CONTENT_LINK = `https://raw.githubusercontent.com/${USERNAME}/${REPO}/${BRANCH}`;
+}
 
 const STATIC_LINK = `${USER_CONTENT_LINK}/public/static`;
 // Use legacy .js/src/plugins path for backward compatibility
