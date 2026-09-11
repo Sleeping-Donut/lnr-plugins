@@ -4,14 +4,41 @@ export type StorageItem<T = unknown> = {
   expires?: number;
 };
 
+const STORAGE_KEY = 'lnreader-playground-storage';
+
 class Storage {
   private db: Record<string, StorageItem>;
 
   /**
-   * Initializes a new instance of the Storage class.
+   * Initializes a new instance of the Storage class, restoring any values
+   * previously persisted to the browser's localStorage.
    */
   constructor() {
-    this.db = {};
+    this.db = this.load();
+  }
+
+  private load(): Record<string, StorageItem> {
+    if (typeof window === 'undefined') return {};
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw) as Record<string, StorageItem>;
+      for (const item of Object.values(parsed)) {
+        if (item?.created) item.created = new Date(item.created);
+      }
+      return parsed;
+    } catch {
+      return {};
+    }
+  }
+
+  private persist(): void {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(this.db));
+    } catch {
+      // Ignore quota or availability errors in the playground
+    }
   }
 
   /**
@@ -27,6 +54,7 @@ class Storage {
       value,
       expires: expires instanceof Date ? expires.getTime() : expires,
     };
+    this.persist();
   }
 
   /**
@@ -63,6 +91,7 @@ class Storage {
    */
   delete(key: string): void {
     delete this.db[key];
+    this.persist();
   }
 
   /**
@@ -70,6 +99,7 @@ class Storage {
    */
   clearAll(): void {
     this.db = {};
+    this.persist();
   }
 }
 

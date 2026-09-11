@@ -12,6 +12,7 @@ import PopularNovelsSection from '@/components/popular-novels';
 import SearchNovelsSection from '@/components/search-novels';
 import ParseNovelSection from '@/components/parse-novel';
 import SettingsSection from '@/components/settings';
+import PluginSettingsSection from '@/components/plugin-settings';
 import ParseChapterSection from '@/components/parse-chapter';
 
 function PluginSidebar() {
@@ -181,6 +182,7 @@ function Home() {
               </TabsContent>
 
               <TabsContent value="settings" className="space-y-6">
+                <PluginSettingsSection plugin={plugin} />
                 <SettingsSection />
               </TabsContent>
             </Tabs>

@@ -59,6 +59,37 @@ export namespace Plugin {
     body?: string;
   };
 
+  export type PluginSettingOption = {
+    label: string;
+    value: string;
+  };
+
+  export type PluginSetting =
+    | {
+        value: string;
+        label: string;
+        type?: 'Text';
+      }
+    | {
+        value: boolean;
+        label: string;
+        type: 'Switch';
+      }
+    | {
+        value: string;
+        label: string;
+        type: 'Select';
+        options: PluginSettingOption[];
+      }
+    | {
+        value: string[];
+        label: string;
+        type: 'CheckboxGroup';
+        options: PluginSettingOption[];
+      };
+
+  export type PluginSettings = Record<string, PluginSetting>;
+
   export type PluginBase = {
     id: string;
     name: string;
@@ -74,6 +105,7 @@ export namespace Plugin {
     site: string;
     imageRequestInit?: ImageRequestInit;
     filters?: Filters;
+    pluginSettings?: PluginSettings;
     version: string;
     //flag indicates whether access to LocalStorage, SesesionStorage is required.
     webStorageUtilized?: boolean;
