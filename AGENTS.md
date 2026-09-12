@@ -102,7 +102,7 @@ API and the plugin's parsing can change independently.
   `.github/workflows/publish-plugins.yml`, which builds and force-pushes the compiled output plus
   `.dist/plugins.min.json` to that branch.
 - Add this repo to the app as
-  `https://raw.githubusercontent.com/<user>/<repo>/plugins/v0.1.0/.dist/plugins.min.json`.
+  `https://raw.githubusercontent.com/Sleeping-Donut/lnr-plugins/plugins/v0.1.0/.dist/plugins.min.json`.
 - Do not commit `.js/`, `.dist/`, `total.svg`, or local environment files.
 
 ## Commit messages

@@ -139,7 +139,9 @@ Kavita instance. There are no hard-coded server URLs:
 | --- | --- | --- |
 | `url` | Text | Kavita base URL, e.g. `http://192.168.1.10:5000`. Supports a reverse-proxy subpath (`https://host/kavita`) and strips trailing slashes. |
 | `apiKey` | Text | Kavita API key (User Settings → Account / 3rd Party Clients). |
-| `libraryId` | Text | Optional default library id used when browsing instead of `Latest`. |
+
+The browsing library is chosen with the plugin's `library` filter — a `Picker` populated from
+`/api/opds/{key}/libraries` on each source open — rather than a setting.
 
 The private `baseUrl` and `apiKey` getters read `storage` on every call (not cached as
 class fields), so changing settings takes effect without relying on a reload. `url(path,
@@ -208,7 +210,7 @@ manifest, playground, and publishing scripts, but ships only the Kavita plugin.
 Add it to the LNReader app as a plugin repository:
 
 ```
-https://raw.githubusercontent.com/<your-user>/<your-repo>/plugins/v0.1.0/.dist/plugins.min.json
+https://raw.githubusercontent.com/Sleeping-Donut/lnr-plugins/plugins/v0.1.0/.dist/plugins.min.json
 ```
 
 The `plugins/v<version>` branch is produced by the publish workflow and tracks `version` in
@@ -238,7 +240,7 @@ tracked files, so `git add` the repo (or use `nix develop path:.`) before the fi
 ## 8. Milestones
 
 1. ✅ **Repo scaffold** — minimal extension repo, flake devshell, publish/lint workflows.
-2. ✅ **Skeleton + auth** — settings (`url`, `apiKey`, `libraryId`), `?apiKey=` request
+2. ✅ **Skeleton + auth** — settings (`url`, `apiKey`), `?apiKey=` request
    helper, path scheme.
 3. ✅ **Catalog** — `popularNovels` + `searchNovels` via OPDS feeds.
 4. ✅ **Metadata + chapter list** — `parseNovel` via REST.

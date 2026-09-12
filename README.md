@@ -21,23 +21,23 @@ app you must point it at your own server:
    - **Kavita server URL** — e.g. `http://192.168.1.10:5000` (no trailing slash).
    - **API key** — from Kavita: *User Settings → Account → API Key* (or the key embedded in
      Kavita's *3rd Party Clients / OPDS* URL).
-   - **Default library ID** *(optional)* — a Kavita library id to browse when not using the
-     `Latest` button.
 4. Save and restart the app.
 
-Both the server URL and the API key are user-configurable plugin settings, so the same plugin
-works against any Kavita instance on your network.
+The server URL and API key are user-configurable plugin settings, so the same plugin works against
+any Kavita instance on your network. Use the **Library** filter in the source's browse view to
+switch between libraries.
 
 ## Add this repo to LNReader
 
 Once the publish workflow has run, add this URL to the app's plugin repository list:
 
 ```
-https://raw.githubusercontent.com/<your-user>/<your-repo>/plugins/v0.1.0/.dist/plugins.min.json
+https://raw.githubusercontent.com/Sleeping-Donut/lnr-plugins/plugins/v0.1.0/.dist/plugins.min.json
 ```
 
-Replace `<your-user>/<your-repo>`, and keep the `plugins/v<version>` part in sync with the
-`version` field in `package.json` (currently `0.1.0`).
+The `plugins/v0.1.0` segment comes from `package.json`'s `version`; keep that fixed so this URL
+stays valid. Plugin updates are delivered by bumping the plugin's own `version` in
+`plugins/multi/kavita.ts`.
 
 ## Development
 
@@ -52,9 +52,9 @@ pnpm dev:start       # playground at http://localhost:3000
 Useful commands (same as upstream):
 
 - `pnpm dev:start` — regenerate generated plugins and launch the plugin playground.
-- `pnpm check:plugin plugins/multi/kavita.ts` — bundle and exercise the plugin against a
-  live server (expect `INCONCLUSIVE` unless a reachable Kavita with valid credentials is set as
-  the plugin's default settings; self-hosted plugins are normally verified manually).
+- `pnpm check:plugin plugins/<lang>/<plugin>.ts` — bundle and exercise a plugin against its live
+  site. Kavita is skipped via `.livecheckignore` because it is self-hosted and needs user-specific
+  configuration; verify it in the playground or the app instead.
 - `pnpm lint` / `pnpm format:check`
 - `pnpm build:compile` / `pnpm build:manifest`
 - `pnpm publish:plugins` — compile and force-push the built manifest to the
