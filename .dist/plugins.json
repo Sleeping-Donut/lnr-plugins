@@ -1,0 +1,20 @@
+[
+	{
+		"id": "tapas",
+		"name": "Tapas",
+		"site": "https://tapas.io",
+		"lang": "English",
+		"version": "0.1.0",
+		"url": "https://raw.githubusercontent.com/Sleeping-Donut/lnr-plugins/plugins/v0.1.0/.js/src/plugins/english/tapas.js",
+		"iconUrl": "https://raw.githubusercontent.com/Sleeping-Donut/lnr-plugins/plugins/v0.1.0/public/static/src/en/tapas/icon.png"
+	},
+	{
+		"id": "kavita",
+		"name": "Kavita",
+		"site": "url",
+		"lang": "Multi",
+		"version": "0.1.3",
+		"url": "https://raw.githubusercontent.com/Sleeping-Donut/lnr-plugins/plugins/v0.1.0/.js/src/plugins/multi/kavita.js",
+		"iconUrl": "https://raw.githubusercontent.com/Sleeping-Donut/lnr-plugins/plugins/v0.1.0/public/static/src/multi/kavita/icon.png"
+	}
+]
