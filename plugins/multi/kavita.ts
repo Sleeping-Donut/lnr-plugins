@@ -71,7 +71,7 @@ class KavitaPlugin implements Plugin.PluginBase {
   name = 'Kavita';
   icon = 'src/multi/kavita/icon.png';
   site = (storage.get('url') as string) || '';
-  version = '0.1.2';
+  version = '0.1.3';
 
   private libraryCache: { key: string; options: FilterOption[] } | null = null;
 
@@ -258,8 +258,7 @@ class KavitaPlugin implements Plugin.PluginBase {
       await this.loadLibraries(true);
     }
 
-    const libraryId =
-      filters?.library.value || (storage.get('libraryId') as string) || '';
+    const libraryId = filters?.library.value || '';
 
     if (!showLatestNovels && !libraryId) {
       return await this.allSeries(pageNo);
@@ -463,10 +462,6 @@ class KavitaPlugin implements Plugin.PluginBase {
     apiKey: {
       value: '',
       label: 'API key (Kavita -> User Settings -> 3rd Party Clients)',
-    },
-    libraryId: {
-      value: '',
-      label: 'Default library ID (optional)',
     },
   };
 }
