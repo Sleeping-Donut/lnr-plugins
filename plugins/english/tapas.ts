@@ -97,7 +97,7 @@ class TapasPlugin implements Plugin.PluginBase {
   name = 'Tapas';
   icon = 'src/en/tapas/icon.png';
   site = SITE_URL;
-  version = '0.1.0';
+  version = '0.2.0';
 
   private genreOptions: { label: string; value: string }[] | null = null;
 
@@ -139,8 +139,13 @@ class TapasPlugin implements Plugin.PluginBase {
     };
   }
 
-  private isLocked(episode: TapasEpisodeMeta): boolean {
-    return !episode.free || !!episode.must_pay;
+  private canRead(episode: TapasEpisodeMeta): boolean {
+    return !!episode.free || !!episode.unlocked;
+  }
+
+  private chapterName(episode: TapasEpisodeMeta): string {
+    const prefix = episode.free ? '' : episode.unlocked ? '🔓 ' : '🔒 ';
+    return prefix + (episode.title || `Episode ${episode.scene ?? ''}`);
   }
 
   private formatDuration(seconds?: number | null): string {
@@ -257,9 +262,7 @@ class TapasPlugin implements Plugin.PluginBase {
       .slice()
       .sort((a, b) => (a.scene ?? 0) - (b.scene ?? 0))
       .map(episode => ({
-        name:
-          (this.isLocked(episode) ? '🔒 ' : '') +
-          (episode.title || `Episode ${episode.scene ?? ''}`),
+        name: this.chapterName(episode),
         path: `episode:${seriesId}:${episode.id}`,
         chapterNumber: episode.scene,
         releaseTime: episode.created_date,
@@ -279,7 +282,7 @@ class TapasPlugin implements Plugin.PluginBase {
     );
     if (!episode) return '<p>Could not load this chapter.</p>';
 
-    if (this.isLocked(episode)) {
+    if (!this.canRead(episode)) {
       throw new Error(await this.lockMessage(seriesId, episode));
     }
 
