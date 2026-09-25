@@ -285,13 +285,13 @@ The cache stores `{ key, options }` like Kavita's `libraryCache`; `popularNovels
   - `GET /v3/series/{id}` for name/cover/summary/author/genre/status.
   - `GET /v3/series/{id}/episodes`, sort by `scene`, emit one `ChapterItem` per episode
     (`path = episode:{sid}:{eid}`, `chapterNumber = scene`, `releaseTime = created_date`).
-  - Locked episodes get a `🔒` prefix in the chapter name:
-    `name = (locked ? '🔒 ' : '') + title`. "Locked" = `!free || must_pay` (also consider
-    `early_access`). This is the in-list indicator the user asked for.
+  - Chapter name prefix reflects both the source lock and the user's access:
+    `free` → no prefix; `!free && unlocked` → `🔓 `; `!free && !unlocked` → `🔒 `. `unlocked` comes
+    from the API and is true when the logged-in session can read the episode.
 - `parseChapter('episode:{sid}:{eid}')`
   - `GET /v3/series/{sid}/episodes/{eid}`.
-  - If the episode is locked (`!free || must_pay`), **throw** a clear `Error` — see §4.8 for why,
-    and the fallback.
+  - If the episode is not readable (`!free && !unlocked`), **throw** a clear `Error` — see §4.8.
+    Otherwise load the contents (unlocked episodes return content to an authenticated session).
   - If `contents[0].file_url` ends in `.html` (a novel): `fetchText`
     `https://tapas.io/episode/{eid}`, load with Cheerio, and return
     `$('article.viewer__body').html()` — this handles both plain and encrypted novels. Fall back to
@@ -354,6 +354,33 @@ body, e.g. `<h2>🔒 Locked chapter</h2><p>Unlock this episode on Tapas to read 
 the reader flow but reads like an empty chapter, so it is the second choice. Either way the chapter
 list still shows the episode with a `🔒` prefix, which is fully supported (`ChapterItem.name` is
 free text).
+
+### 4.9 Login and session cookies (Nekori / LNReader-Extended)
+
+To let a logged-in user read chapters they have unlocked, the plugin relies on the app sending the
+session cookies from the login WebView with its requests.
+
+- **Nekori** (`Yuneko-dev/Nekori`) builds its OkHttp client with
+  `cookieJar(AndroidCookieJar())`, and `AndroidCookieJar` is backed by
+  `android.webkit.CookieManager` — the same store `react-native-webview` writes to. Its
+  `ReactNativeNetworkClient` installs that client into react-native networking, so the plugin's
+  `fetch` automatically carries the cookies from the WebView login. `@nekori/cookie`
+  (`get(url)`, `getCookieHeader(url)`, …) is also exposed if explicit control is ever needed, but it
+  is **not** available in stock LNReader, so the plugin does not import it.
+- **Stock LNReader** does not share WebView cookies with plugin `fetch` and exposes no cookie API
+  (`@libs/cookie`/`@libs/webview` are fork-only), so a stock install stays anonymous and locked
+  chapters remain locked.
+
+The user logs in through the app's existing WebView for the source (`PluginDetailsScreen` →
+`WebviewScreen`, `plugin.site`), then refreshes the novel (which re-runs `parseNovel`). The plugin
+reads the `unlocked` flag from `GET /v3/series/{id}/episodes` and renders `🔓` for
+`!free && unlocked`. `parseChapter` throws only when `!free && !unlocked`; otherwise it loads the
+contents, which the API/website returns to the authenticated session.
+
+Open question to verify with a real login: whether the Tapas session cookie is set for `.tapas.io`
+(so it also reaches `api.tapas.io`) or is host-only. If host-only, the website reader page still
+works but the API's `unlocked` flag would not; in that case lock detection would need to come from
+the website episode-list HTML instead.
 
 ## 5. Repository setup
 
