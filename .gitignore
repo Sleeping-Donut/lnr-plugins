@@ -24,3 +24,5 @@ broken-sites-report.json
 .direnv/
 result
 result-*
+
+references/

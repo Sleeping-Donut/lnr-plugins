@@ -15,6 +15,7 @@
   "ignorePatterns": [
     "node_modules",
     ".js",
-    "plugins/multisrc/fictioneer/custom"
+    "plugins/multisrc/fictioneer/custom",
+    "references"
   ]
 }

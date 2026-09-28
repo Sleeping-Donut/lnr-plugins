@@ -11,7 +11,8 @@
     ".js/**",
     "docs/**",
     "proxy_server.js",
-    "plugins/*/*\\[*\\]*.ts"
+    "plugins/*/*\\[*\\]*.ts",
+    "references/**"
   ],
   "rules": {
     "no-restricted-imports": [

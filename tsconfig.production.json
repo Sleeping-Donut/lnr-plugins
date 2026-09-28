@@ -124,6 +124,7 @@
     ".husky/**",
     "node_modules/**",
     "./src/**",
-    "./plugins/multisrc/*"
+    "./plugins/multisrc/*",
+    "references/**"
   ]
 }
