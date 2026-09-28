@@ -82,6 +82,15 @@ type SearchPage = {
   pagination?: { page?: number; has_next?: boolean };
 };
 
+type TapasWebPage = {
+  data?: {
+    pagination?: { has_next?: boolean; total?: number };
+    body?: string;
+  };
+};
+
+type TapasAccess = 'unlocked' | 'wuf' | 'locked';
+
 const SORT_OPTIONS = [
   { label: 'Popular', value: 'POPULARITY' },
   { label: 'New', value: 'NEWEST' },
@@ -97,7 +106,7 @@ class TapasPlugin implements Plugin.PluginBase {
   name = 'Tapas';
   icon = 'src/en/tapas/icon.png';
   site = SITE_URL;
-  version = '0.2.0';
+  version = '0.3.0';
 
   private genreOptions: { label: string; value: string }[] | null = null;
 
@@ -127,6 +136,56 @@ class TapasPlugin implements Plugin.PluginBase {
     }));
   }
 
+  private async webApi<T>(path: string): Promise<T | null> {
+    const body = await fetchText(`${SITE_URL}/${path}`, {
+      headers: { Accept: 'application/json' },
+    });
+    if (!body) return null;
+    try {
+      return JSON.parse(body) as T;
+    } catch {
+      return null;
+    }
+  }
+
+  private async fetchAccessMap(
+    seriesId: number,
+  ): Promise<Map<number, TapasAccess>> {
+    const access = new Map<number, TapasAccess>();
+    const collect = (body: string) => {
+      const $ = parseHTML(body);
+      $('li[data-id]').each((_, el) => {
+        const id = Number($(el).attr('data-id'));
+        if (!id) return;
+        const locked =
+          $(el).hasClass('js-have-to-sign') ||
+          $(el).find('.thumb__overlay--locked').length > 0;
+        const wuf = $(el).attr('data-is-wuf') === 'true';
+        access.set(id, locked ? (wuf ? 'wuf' : 'locked') : 'unlocked');
+      });
+    };
+
+    const first = await this.webApi<TapasWebPage>(
+      `series/${seriesId}/episodes?page=1&sort=OLDEST`,
+    );
+    if (!first?.data?.body) return access;
+    collect(first.data.body);
+
+    const total = first.data.pagination?.total ?? 0;
+    const pageCount = Math.min(total > 0 ? Math.ceil(total / 20) : 1, 50);
+    const rest = await Promise.all(
+      Array.from({ length: Math.max(pageCount - 1, 0) }, (_, i) =>
+        this.webApi<TapasWebPage>(
+          `series/${seriesId}/episodes?page=${i + 2}&sort=OLDEST`,
+        ),
+      ),
+    );
+    rest.forEach(json => {
+      if (json?.data?.body) collect(json.data.body);
+    });
+    return access;
+  }
+
   private toNovel(series: TapasSeries): Plugin.NovelItem {
     return {
       name: series.title,
@@ -139,12 +198,17 @@ class TapasPlugin implements Plugin.PluginBase {
     };
   }
 
-  private canRead(episode: TapasEpisodeMeta): boolean {
-    return !!episode.free || !!episode.unlocked;
-  }
-
-  private chapterName(episode: TapasEpisodeMeta): string {
-    const prefix = episode.free ? '' : episode.unlocked ? '🔓 ' : '🔒 ';
+  private chapterName(
+    episode: TapasEpisodeMeta,
+    access: TapasAccess | undefined,
+  ): string {
+    const prefix = episode.free
+      ? ''
+      : access === 'unlocked'
+        ? '🔓 '
+        : access === 'wuf'
+          ? '⏳ '
+          : '🔒 ';
     return prefix + (episode.title || `Episode ${episode.scene ?? ''}`);
   }
 
@@ -235,9 +299,10 @@ class TapasPlugin implements Plugin.PluginBase {
     };
     if (!seriesId) return novel;
 
-    const [series, episodes] = await Promise.all([
+    const [series, episodes, accessMap] = await Promise.all([
       this.api<TapasSeries>(`series/${seriesId}`),
       this.api<TapasEpisodeMeta[]>(`series/${seriesId}/episodes`),
+      this.fetchAccessMap(seriesId),
     ]);
 
     if (series) {
@@ -262,7 +327,7 @@ class TapasPlugin implements Plugin.PluginBase {
       .slice()
       .sort((a, b) => (a.scene ?? 0) - (b.scene ?? 0))
       .map(episode => ({
-        name: this.chapterName(episode),
+        name: this.chapterName(episode, accessMap.get(episode.id)),
         path: `episode:${seriesId}:${episode.id}`,
         chapterNumber: episode.scene,
         releaseTime: episode.created_date,
@@ -277,36 +342,32 @@ class TapasPlugin implements Plugin.PluginBase {
     const episodeId = Number(episodeIdRaw);
     if (!seriesId || !episodeId) return '<p>Invalid chapter.</p>';
 
+    const page = await fetchText(`${SITE_URL}/episode/${episodeId}`);
+    if (page) {
+      const $ = parseHTML(page);
+      const article = $('article.viewer__body').first();
+      const body = article.length ? article.html() : null;
+      if (body) {
+        const hasImages = article.find('img').length > 0;
+        const text = body
+          .replace(/<[^>]+>/g, '')
+          .replace(/&nbsp;/g, ' ')
+          .trim();
+        if (hasImages || text.length > 80) return body;
+      }
+    }
+
     const episode = await this.api<TapasEpisode>(
       `series/${seriesId}/episodes/${episodeId}`,
     );
-    if (!episode) return '<p>Could not load this chapter.</p>';
-
-    if (!this.canRead(episode)) {
-      throw new Error(await this.lockMessage(seriesId, episode));
+    const contents = (episode?.contents ?? []).filter(item => item.file_url);
+    if (contents.length && !/\.html(\?|$)/.test(contents[0].file_url ?? '')) {
+      return contents.map(item => `<img src="${item.file_url}" />`).join('\n');
     }
 
-    const contents = (episode.contents ?? []).filter(item => item.file_url);
-    const first = contents[0];
-    if (first?.file_url && /\.html(\?|$)/.test(first.file_url)) {
-      const page = await fetchText(`${SITE_URL}/episode/${episodeId}`);
-      if (page) {
-        const $ = parseHTML(page);
-        const article = $('article.viewer__body').first();
-        const body = article.length ? article.html() : null;
-        if (body && body.trim()) return body;
-      }
-      const html = await fetchText(first.file_url);
-      if (html && html.indexOf('<') !== -1) {
-        const $ = parseHTML(html);
-        const body = $('#viewport').html() ?? $('body').html();
-        if (body) return body;
-      }
-      return '<p>Could not load this chapter.</p>';
-    }
-
-    if (!contents.length) return '<p>This chapter is empty.</p>';
-    return contents.map(item => `<img src="${item.file_url}" />`).join('\n');
+    throw new Error(
+      await this.lockMessage(seriesId, episode ?? { id: episodeId }),
+    );
   }
 
   resolveUrl = (path: string, isNovel?: boolean) => {
