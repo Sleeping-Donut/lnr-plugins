@@ -283,15 +283,18 @@ The cache stores `{ key, options }` like Kavita's `libraryCache`; `popularNovels
   (search items use `thumb_url` for the cover).
 - `parseNovel('series:{id}')`
   - `GET /v3/series/{id}` for name/cover/summary/author/genre/status.
-  - `GET /v3/series/{id}/episodes`, sort by `scene`, emit one `ChapterItem` per episode
-    (`path = episode:{sid}:{eid}`, `chapterNumber = scene`, `releaseTime = created_date`).
-  - Chapter name prefix reflects both the source lock and the user's access:
-    `free` → no prefix; `!free && unlocked` → `🔓 `; `!free && !unlocked` → `🔒 `. `unlocked` comes
-    from the API and is true when the logged-in session can read the episode.
+  - `GET /v3/series/{id}/episodes` for the full chapter list (ids, `free`, `scene`, dates).
+  - `GET https://tapas.io/series/{id}/episodes?page=N&sort=OLDEST` (page route, `Accept:
+    application/json`), paged 20 at a time, to read the viewer's per-episode lock state from each
+    `<li>` (`js-have-to-sign` / `thumb__overlay--locked`). The list is rendered for the session, so
+    cookies make it reflect what the user can read.
+  - Chapter name prefix: `free` → none; `!free` readable per the website list → `🔓 `; `!free` and
+    locked with `data-is-wuf="true"` (wait-until-free) → `⏳ `; otherwise → `🔒 `.
 - `parseChapter('episode:{sid}:{eid}')`
   - `GET /v3/series/{sid}/episodes/{eid}`.
-  - If the episode is not readable (`!free && !unlocked`), **throw** a clear `Error` — see §4.8.
-    Otherwise load the contents (unlocked episodes return content to an authenticated session).
+  - Fetch `https://tapas.io/episode/{episodeId}` and take `article.viewer__body`: text for a novel,
+    `<img>` tags for a comic, empty when locked. If it has content, return it; else fall back to the
+    app API `contents` (free comics) and finally throw the lock message (§4.8).
   - If `contents[0].file_url` ends in `.html` (a novel): `fetchText`
     `https://tapas.io/episode/{eid}`, load with Cheerio, and return
     `$('article.viewer__body').html()` — this handles both plain and encrypted novels. Fall back to
@@ -372,15 +375,31 @@ session cookies from the login WebView with its requests.
   chapters remain locked.
 
 The user logs in through the app's existing WebView for the source (`PluginDetailsScreen` →
-`WebviewScreen`, `plugin.site`), then refreshes the novel (which re-runs `parseNovel`). The plugin
-reads the `unlocked` flag from `GET /v3/series/{id}/episodes` and renders `🔓` for
-`!free && unlocked`. `parseChapter` throws only when `!free && !unlocked`; otherwise it loads the
-contents, which the API/website returns to the authenticated session.
+`WebviewScreen`, `plugin.site`) and refreshes the novel, which re-runs `parseNovel`.
 
-Open question to verify with a real login: whether the Tapas session cookie is set for `.tapas.io`
-(so it also reaches `api.tapas.io`) or is host-only. If host-only, the website reader page still
-works but the API's `unlocked` flag would not; in that case lock detection would need to come from
-the website episode-list HTML instead.
+Important: the **mobile API (`api.tapas.io/v3`) ignores the website session**. `JSESSIONID` is set
+for `.tapas.io` (so it is sent to `api.tapas.io`), but sending it makes no difference to the
+responses, so the API's `unlocked` flag is always `false`. Access and content therefore come from
+the **website**, which does honor the session:
+
+- `parseNovel` reads the per-episode lock state from the website episode list
+  (`https://tapas.io/series/{id}/episodes?page=N&sort=OLDEST`, `Accept: application/json`). That list
+  is rendered per session: locked entries carry `js-have-to-sign` / `thumb__overlay--locked`, which
+  disappear for episodes the logged-in user can read.
+- `parseChapter` fetches `https://tapas.io/episode/{id}`; `article.viewer__body` holds the novel
+  text, the comic images, or nothing when locked.
+
+Cost: `parseNovel` pages the website list (20 per page) to build the readable set.
+
+The mobile app's native auth (email/password → token) could not be reproduced: there is no
+`/v3/login`, `/v3/token`, or `/v3/oauth` route (`users/login` is a profile route that rejects POST),
+and no documented token header. Even if it were, novel bodies from the API are encrypted blobs, so
+the website would still be needed to read them. The WebView login + website session is therefore the
+supported path.
+
+Wait-until-free vs locked: the website list carries `data-is-wuf="true"` on episodes that will
+become free after a timer, distinct from paid/early-access locks. Verified on Roxana
+(WAIT_OR_MUST_PAY → `⏳`) vs `Even a Replica Can Fall in Love` (PAID → `🔒`).
 
 ## 5. Repository setup
 
